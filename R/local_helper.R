@@ -16,9 +16,9 @@ log_lkh <- function(eta, xi, beta, dat.obs, psi, d_phi, knot){
                 paste0('phi', 1:d_phi))
   X <- t(dplyr::select(dat.obs, -nonx_col))
   eta <- matrix(eta, nrow = length(eta), ncol = 1)
-  lglkh_1 <- dat.obs$failed * 
+  lglkh_1 <- dat.obs$failed *
     ( t(eta) %*% psi + t(xi) %*% phi + t(beta) %*% X )
-  lglkh_2 <- -cbhhat.obj$int * 
+  lglkh_2 <- -cbhhat.obj$int *
     exp( t(xi) %*% phi + t(beta) %*% X )
   lglkh <- -mean(lglkh_1 + lglkh_2)
 
@@ -34,11 +34,11 @@ integral_target <- function(t_vec, knot, eta){
 }
 
 cbhhat <- function(t_vec, eta, knot, n.nodes=15){
-  gaussquad <- gauss.quad(n.nodes, kind = 'legendre')
+  gaussquad <- statmod::gauss.quad(n.nodes, kind = 'legendre')
   cbhazard <- sapply(1:n.nodes, function(i){
-    result <- t_vec/2 * gaussquad$weights[i] * 
+    result <- t_vec/2 * gaussquad$weights[i] *
       integral_target(t_vec * (gaussquad$nodes[i] + 1) / 2, knot, eta)
-    return(result) 
+    return(result)
   })
 
   int <- rowSums(cbhazard)
@@ -50,7 +50,7 @@ cbhhat <- function(t_vec, eta, knot, n.nodes=15){
 grr <- function(eta, xi, beta, dat.obs, psi, d_phi, knot, n.nodes = 15){
   ### auxiliary function for optim, which compute the gradient of our -log-likelihood
   t_vec = dat.obs$y
-  gaussquad <- gauss.quad(n.nodes, kind = 'legendre')
+  gaussquad <- statmod::gauss.quad(n.nodes, kind = 'legendre')
   phi <- t(dplyr::select(dat.obs, 'phi1':paste0('phi', d_phi)))
   nonx_col <- c('y','failed','calendar_time',paste0('phi', 1:d_phi))
   X <- t(dplyr::select(dat.obs, -nonx_col))
@@ -58,10 +58,10 @@ grr <- function(eta, xi, beta, dat.obs, psi, d_phi, knot, n.nodes = 15){
   Z <- as.numeric(t(xi) %*% phi + t(beta) %*% X)
 
   grr_part <- sapply(1:n.nodes, function(i){
-    result <- t_vec/2 * gaussquad$weights[i] * 
+    result <- t_vec/2 * gaussquad$weights[i] *
       as.vector(integral_target(t_vec * (gaussquad$nodes[i] + 1) / 2, knot, eta)) *
       t(com_psi(t_vec * (gaussquad$nodes[i] + 1) / 2, knot))
-    return(list(result)) 
+    return(list(result))
   })
 
   grr_part_i <- Reduce("+", grr_part)
